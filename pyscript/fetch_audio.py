@@ -9,7 +9,7 @@ import shutil
 from pydub import AudioSegment
 
 #token
-token = "BQBY3KeGtaGIuZPO7WkKkZukZx-mvrU3J8V--uOO3QJanwYQ0_4UioCeyKmOEYYfRLjQVhkaH-ZyxVEUic-oNFFsqeTEvkAnsr48u3SRa8KcWjN9VXa_bAYLou8-WKfqFukOkZjfyQ3BgjoS2-GoVbAH_wYg7vKuhE67ukQDMEjs-euJNMcVFZG6OLrq4zDeRw4tdlReJ0VlcI4S1-E05faEO199SBjDqCiKgyWrV-ZuAphvRSORJJ0xLp5qv8wIFFItSn8YgNP3jX_8-0g" 
+token = "BQDsvtF62_ZhbeVGX09X-XIq_zj4in8nPnq317rP9ef9KJuBNL0VUsNmi2A1DM4gTkuL1B2DyuKBTwgPEPM54iCy9GZ2zBgfinFWlRCklnJO7Wij4-KWtmhYijM64E2gX3Ia479JzOdquvMh9HfYagZWo49RaCDfZge9B948bBIv88sHBfc-9t1xhV9F79PMbd528q8Bucx2mZw6Oy48kv8wNhPD16Lh6l-niGpCqA90pCfFcupahTq0LcsCRNPYVQlkUTMTz6ESIn1YuNk" 
 
 #header field for the request, should contain the token
 header = {'Authorization': 'Bearer %s'%token}
@@ -20,6 +20,7 @@ audio_dir = 'audio'
 #request urls
 search_url = 'https://api.spotify.com/v1/search'
 artist_toptrack_url = 'https://api.spotify.com/v1/artists/id/top-tracks'
+audio_features_url = 'https://api.spotify.com/v1/audio-features/id'
 
 def delete_folder(dir_name):
     #delete previous folder for the preview 
@@ -31,6 +32,8 @@ def make_request(url, parameters):
     return req
 
 def main():
+    spotify_features = []
+
     #delete all the previous folders 
     delete_folder(audio_dir)
 
@@ -70,6 +73,7 @@ def main():
     #save url of the preview and song names 
     preview_urls = [song['preview_url'] for song in songs]
     songs_name = [song['name'] for song in songs]
+    songs_id = [song['id'] for song in songs]
 
     #for now we simply save the previews
     for url, name in zip(preview_urls, songs_name):
@@ -79,8 +83,13 @@ def main():
             sound = AudioSegment.from_mp3(filename)
             sound.export(filename.replace('.mp3', '.wav'), format='wav')
             os.remove(filename)
-    
-    return artist_name
+
+    for id in songs_id:
+        song_url = audio_features_url.replace('id', id)
+        req = make_request(song_url, None)
+        spotify_features.append(req.json())
+
+    return artist_name, spotify_features
 
 if __name__ == "__main__":
     main()
