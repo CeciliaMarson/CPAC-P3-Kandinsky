@@ -2,25 +2,44 @@ import fetch_audio
 import numpy as np
 import os 
 import librosa
+import json
 from color_helper import MplColorHelper
 
 audio_dir = 'audio'
 dark_maps = ['gray', 'bone', 'winter', 'copper']
-light_maps = ['sping', 'summer', 'autumn', 'hot']
+light_maps = ['spring', 'summer', 'autumn', 'hot']
 
+#select color map based on global features
 def global_color_map(valence, energy):
     if valence >= 0.2:
         if energy >= 0.5:
-            map_name = np.randint(0,2)
+            map_name = light_maps[np.random.randint(0,2)]
         else:
-            map_name = np.randint(2,4)
+            map_name = light_maps[np.random.randint(2,4)]
     else:
         if energy >= 0.5:
-            map_name = np.randint(0,2)
+            map_name = dark_maps[np.random.randint(0,2)]
         else:
-            map_name = np.randint(2,4)
-    
+            map_name = dark_maps[np.random.randint(2,4)]
+            
     return MplColorHelper(map_name, 2, 10)
+
+def evaluate_feature(feature_arr):
+    mean = np.mean(feature_arr)
+    
+    val = np.where(feature_arr >= mean, np.random.randint(0, 6), feature_arr)
+    val = np.where(val <= mean, np.random.randint(5, 10), val)
+    return val
+
+#select color for each frame based on local features
+def local_features(color_map, features):
+    zcr = features[0]
+    flat = features[1]
+    centroid = features[2]
+
+    val = [evaluate_feature(f) for f in features]
+    mean = np.mean(np.array(val), axis=0)[0]
+    return [color_map.get_rgb(int(v)) for v in mean]
 
 def feature_extractor(signal, frame_length):
     features = []
@@ -49,9 +68,14 @@ def print_features(signal_features):
         print('\n')
         #print('zcr: {}'.format(f[1]))
 
+def create_dict(arr):
+    out = [{'R': int(c[0]*255), 'G': int(c[1]*255), 'B': int(c[2]*255)} for c in arr]
+    return out
+
 def main():
     audio_list = []
     audio_files = []
+    songs_rgb_list = []
 
     if not os.path.exists(audio_dir):
        print('Audio folder not exist!\n') 
@@ -73,11 +97,19 @@ def main():
     frame_length = sr*np.min(np.array(tempos))
     signals_features = [feature_extractor(audio, int(frame_length/tempo)) for audio, tempo in zip(audio_files, tempos)]
     #print_features(signals_features)
-
+    
+    #for each song choose a colormap based on the global features
+    #and then use the local features to select a color for each frame
     for sf, f in zip(spotify_features, signals_features):
         #select the color map based on the global features
         COL = global_color_map(sf['valence'], sf['energy']) 
-        #TODO select color from the color map at each frame
+        rgb_arr = local_features(COL, f)
+        rgb_dict = create_dict(rgb_arr)
+        songs_rgb_list.append(rgb_dict)
+
+    with open('string.json','w') as outfile:
+        json.dump(songs_rgb_list, outfile)
+
 
 if __name__ == '__main__':
     #get the artist name from fetch_audio

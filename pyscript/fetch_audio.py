@@ -9,7 +9,7 @@ import shutil
 from pydub import AudioSegment
 
 #token
-token = "BQDsvtF62_ZhbeVGX09X-XIq_zj4in8nPnq317rP9ef9KJuBNL0VUsNmi2A1DM4gTkuL1B2DyuKBTwgPEPM54iCy9GZ2zBgfinFWlRCklnJO7Wij4-KWtmhYijM64E2gX3Ia479JzOdquvMh9HfYagZWo49RaCDfZge9B948bBIv88sHBfc-9t1xhV9F79PMbd528q8Bucx2mZw6Oy48kv8wNhPD16Lh6l-niGpCqA90pCfFcupahTq0LcsCRNPYVQlkUTMTz6ESIn1YuNk" 
+token = "BQASgzDxZr_kfYriz9JQTr_Xvu2Lei4xa0QHChD2dQZeXgJdjA6uVFrdJNHDXq-LrQmLGaPG5jzJBFQNjBHG4yaG_3YrmVD8wfmb81-V2vUE2iqmyoa4XesNuOF4Cl664JFVOiTLKbsYLEgt58xi2T_KHTh0G_4RUf4Ifq77G_Ck0PJeIVjUU2iOSjAzpuWmfd2DsBB4PvJbnetwSUgxQpjfXIwW2MW06lBmdSzHdUMfk-sSs3a_7OTYM3DWc8EjxucqFPZqZuYaVPpMguI" 
 
 #header field for the request, should contain the token
 header = {'Authorization': 'Bearer %s'%token}
@@ -30,6 +30,12 @@ def delete_folder(dir_name):
 def make_request(url, parameters):
     req = requests.get(url=url, params=parameters, headers=header)
     return req
+
+def error_request(req):
+    if not req.status_code == 200:
+        print('Error! {}'.format(req.json()['error']['message']))
+        delete_folder(audio_dir)
+        exit()
 
 def main():
     spotify_features = []
@@ -52,10 +58,8 @@ def main():
     params={'q': artist_name , 'type': 'artist'}
     req = make_request(search_url, params)
 
-    if not req.status_code == 200:
-        print('Error! {}'.format(req.json()['error']['message']))
-        delete_folder(audio_dir)
-        exit()
+    #check for error in the response 
+    error_request(req)
 
     artist_id = req.json()['artists']['items'][0]['id']
 
@@ -64,10 +68,8 @@ def main():
     params = {'country': 'IT'}
     req = make_request(url , params)
 
-    if not req.status_code == 200:
-        print('Error! {}'.format(req.json()['error']['message']))
-        delete_folder(audio_dir)
-        exit()
+    #check for error in the response 
+    error_request(req)
 
     songs = req.json()['tracks'] 
     #save url of the preview and song names 
@@ -87,6 +89,10 @@ def main():
     for id in songs_id:
         song_url = audio_features_url.replace('id', id)
         req = make_request(song_url, None)
+        #check for error in the response 
+        if req.status_code == 503:
+            spotify_features.append({'energy': 0.51, 'valence':0.12, 'tempo':120.0})
+            continue
         spotify_features.append(req.json())
 
     return artist_name, spotify_features
