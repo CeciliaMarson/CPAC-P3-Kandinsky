@@ -9,13 +9,14 @@ import shutil
 from pydub import AudioSegment
 
 #token
-token = "BQBuh_hsoKkUS8VQ476BQsB7Ivzom_0a1UWjkp2IP0P-6gQOBoQ0iNe4o63gvF0LSOBnvqUK4hAxDOOFNwaNSPYFyeI4eq8klXpCpADQNYZgQCH1jFW1tg4Sd9Ey7UbNLcRXDKjL1wRKI-bMy5tZoAWaPnWWGm66-1jKHwW5bbWsD6rxsiU_C_GDdREgEqLxGGYp16Q2uFu6BpevhbEu8bCHLxMPaJhkXVYJR3VZg-CUVvW6jPmsLUbxdifqsO2xQsXgVmO-zjgIlK6gS2A" 
+#token = "BQBuh_hsoKkUS8VQ476BQsB7Ivzom_0a1UWjkp2IP0P-6gQOBoQ0iNe4o63gvF0LSOBnvqUK4hAxDOOFNwaNSPYFyeI4eq8klXpCpADQNYZgQCH1jFW1tg4Sd9Ey7UbNLcRXDKjL1wRKI-bMy5tZoAWaPnWWGm66-1jKHwW5bbWsD6rxsiU_C_GDdREgEqLxGGYp16Q2uFu6BpevhbEu8bCHLxMPaJhkXVYJR3VZg-CUVvW6jPmsLUbxdifqsO2xQsXgVmO-zjgIlK6gS2A" 
 
 #header field for the request, should contain the token
 header = {'Authorization': 'Bearer %s'%token}
 
 #directories
 audio_dir = 'audio'
+json_dir = 'json'
 
 #request urls
 search_url = 'https://api.spotify.com/v1/search'
@@ -42,9 +43,14 @@ def main():
 
     #delete all the previous folders 
     delete_folder(audio_dir)
+    delete_folder(json_dir)
 
     #creat audio folder
     os.makedirs(audio_dir)
+    os.makedirs(json_dir)
+
+    #ask user for the token
+    token = input('Insert the token')
 
     #ask user for the artist name
     #artist_name ='The Kandinsky Effect'
@@ -95,7 +101,7 @@ def main():
             continue
         spotify_features.append(req.json())
 
-    return artist_name, spotify_features
+    return artist_name, spotify_features, songs_name
 
 if __name__ == "__main__":
     main()

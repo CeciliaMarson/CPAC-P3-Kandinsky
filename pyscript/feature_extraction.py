@@ -6,6 +6,7 @@ import json
 from color_helper import MplColorHelper
 
 audio_dir = 'audio'
+json_dir = 'json'
 dark_maps = ['gray', 'bone', 'winter', 'copper']
 light_maps = ['spring', 'summer', 'autumn', 'hot']
 
@@ -69,7 +70,7 @@ def print_features(signal_features):
         #print('zcr: {}'.format(f[1]))
 
 def create_dict(arr):
-    out = [{'R': int(c[0]*255), 'G': int(c[1]*255), 'B': int(c[2]*255)} for c in arr]
+    out = [{'R': int(c[0]*255), 'G': int(c[1]*255), 'B': int(c[2]*255), 'Shape': np.random.randint(0,6)} for c in arr]
     return out
 
 def main():
@@ -79,6 +80,10 @@ def main():
 
     if not os.path.exists(audio_dir):
        print('Audio folder not exist!\n') 
+       exit()
+
+    if not os.path.exists(json_dir):
+       print('Json folder not exist!\n') 
        exit()
 
     tempos = [f['tempo'] for f in spotify_features]
@@ -100,20 +105,18 @@ def main():
     
     #for each song choose a colormap based on the global features
     #and then use the local features to select a color for each frame
-    for sf, f in zip(spotify_features, signals_features):
+    for sf, f, name in zip(spotify_features, signals_features, song_names):
         #select the color map based on the global features
         COL = global_color_map(sf['valence'], sf['energy']) 
         rgb_arr = local_features(COL, f)
         rgb_dict = create_dict(rgb_arr)
-        songs_rgb_list.append(rgb_dict)
-
-    with open('string.json','w') as outfile:
-        json.dump(songs_rgb_list, outfile)
+        with open(os.path.join(json_dir, name+'.json'),'w', encoding='utf-8') as outfile:
+            json.dump(rgb_dict, outfile, ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':
     #get the artist name from fetch_audio
-    artist_name, spotify_features = fetch_audio.main()
+    artist_name, spotify_features, song_names = fetch_audio.main()
     audio_dir = os.path.join(audio_dir, artist_name)
     main()
 
