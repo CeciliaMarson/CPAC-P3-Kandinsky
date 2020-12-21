@@ -1,2 +1,2 @@
-/audio
-/__pycache__
+audio/*
+__pycache__/*
