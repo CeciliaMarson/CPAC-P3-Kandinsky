@@ -20,7 +20,7 @@ void setup(){
   f1=get_figure(list);
   sample = new SoundFile(this,(name));
   background(255,245,184);
-  frameRate(30.0/size);
+  frameRate(size/30.0);
 }
 
 //function used to read a single json file
