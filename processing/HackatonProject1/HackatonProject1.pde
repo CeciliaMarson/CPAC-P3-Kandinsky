@@ -14,7 +14,7 @@ int bpm = int(random(90,140));
 
 void setup(){
   //the json file are in the data folder 
-  jsonPath = sketchPath() + "/data/json";
+  jsonPath = sketchPath() + "/data";
   filenames = listFileNames(jsonPath);
   
   //TODO: read all the json files of the songs and store the rgb array
