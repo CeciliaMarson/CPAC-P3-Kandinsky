@@ -16,7 +16,7 @@ void setup(){
   jsonPath = sketchPath() + "/data";
   filenames = listFileNames(jsonPath);
   ArrayList<Info> list=readJson(jsonPath+"/"+filenames[2]);
-  String name="Defective Bleeding.wav";
+  String name="data/audio/The Kandinsky Effect/Defective Bleeding.wav";
   f1=get_figure(list);
   sample = new SoundFile(this,(name));
   background(255,245,184);
