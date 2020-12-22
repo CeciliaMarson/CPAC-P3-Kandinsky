@@ -11,12 +11,9 @@ from pydub import AudioSegment
 #token
 #token = "BQBuh_hsoKkUS8VQ476BQsB7Ivzom_0a1UWjkp2IP0P-6gQOBoQ0iNe4o63gvF0LSOBnvqUK4hAxDOOFNwaNSPYFyeI4eq8klXpCpADQNYZgQCH1jFW1tg4Sd9Ey7UbNLcRXDKjL1wRKI-bMy5tZoAWaPnWWGm66-1jKHwW5bbWsD6rxsiU_C_GDdREgEqLxGGYp16Q2uFu6BpevhbEu8bCHLxMPaJhkXVYJR3VZg-CUVvW6jPmsLUbxdifqsO2xQsXgVmO-zjgIlK6gS2A" 
 
-#header field for the request, should contain the token
-header = {'Authorization': 'Bearer %s'%token}
-
 #directories
-audio_dir = 'audio'
-json_dir = 'json'
+audio_dir = '../processing/HackatonProject1/data/audio'
+json_dir = '../processing/HackatonProject1/data'
 
 #request urls
 search_url = 'https://api.spotify.com/v1/search'
@@ -28,7 +25,7 @@ def delete_folder(dir_name):
     if os.path.exists(dir_name):
         shutil.rmtree(dir_name)
 
-def make_request(url, parameters):
+def make_request(url, parameters, header):
     req = requests.get(url=url, params=parameters, headers=header)
     return req
 
@@ -42,15 +39,17 @@ def main():
     spotify_features = []
 
     #delete all the previous folders 
-    delete_folder(audio_dir)
     delete_folder(json_dir)
 
     #creat audio folder
-    os.makedirs(audio_dir)
     os.makedirs(json_dir)
+    os.makedirs(audio_dir)
 
     #ask user for the token
-    token = input('Insert the token')
+    token = input('Insert the token: ')
+
+    #header field for the request, should contain the token
+    header = {'Authorization': 'Bearer %s'%token}
 
     #ask user for the artist name
     #artist_name ='The Kandinsky Effect'
@@ -62,7 +61,7 @@ def main():
 
     #get the id of the artist
     params={'q': artist_name , 'type': 'artist'}
-    req = make_request(search_url, params)
+    req = make_request(search_url, params, header)
 
     #check for error in the response 
     error_request(req)
@@ -72,7 +71,7 @@ def main():
     #get the top track of the artist
     url = artist_toptrack_url.replace('id', artist_id)
     params = {'country': 'IT'}
-    req = make_request(url , params)
+    req = make_request(url , params, header)
 
     #check for error in the response 
     error_request(req)
@@ -94,10 +93,10 @@ def main():
 
     for id in songs_id:
         song_url = audio_features_url.replace('id', id)
-        req = make_request(song_url, None)
+        req = make_request(song_url, None, header)
         #check for error in the response 
         if req.status_code == 503:
-            spotify_features.append({'energy': 0.51, 'valence':0.12, 'tempo':120.0})
+            spotify_features.append({'energy': np.random.random(), 'valence': np.random.random(), 'tempo':120.0})
             continue
         spotify_features.append(req.json())
 

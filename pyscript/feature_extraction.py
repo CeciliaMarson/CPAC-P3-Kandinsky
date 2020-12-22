@@ -5,10 +5,10 @@ import librosa
 import json
 from color_helper import MplColorHelper
 
-audio_dir = 'audio'
-json_dir = 'json'
+audio_dir = '../processing/HackatonProject1/data/audio'
+json_dir = '../processing/HackatonProject1/data'
 dark_maps = ['gray', 'bone', 'winter', 'copper']
-light_maps = ['spring', 'summer', 'autumn', 'hot']
+light_maps = ['spring', 'autumn', 'summer' , 'hot']
 
 #select color map based on global features
 def global_color_map(valence, energy):
@@ -23,14 +23,20 @@ def global_color_map(valence, energy):
         else:
             map_name = dark_maps[np.random.randint(2,4)]
             
-    return MplColorHelper(map_name, 2, 10)
+    return MplColorHelper(map_name, 1, 100)
 
 def evaluate_feature(feature_arr):
     mean = np.mean(feature_arr)
+    val = np.copy(feature_arr[0])
     
-    val = np.where(feature_arr >= mean, np.random.randint(0, 6), feature_arr)
-    val = np.where(val <= mean, np.random.randint(5, 10), val)
-    return val
+    for i, f in enumerate(val):
+        if f >=mean:
+            val[i] = np.random.randint(1,51)
+        else:
+            val[i] = np.random.randint(50, 100)
+
+    val = val.astype(int)
+    return val.tolist() 
 
 #select color for each frame based on local features
 def local_features(color_map, features):
@@ -39,7 +45,7 @@ def local_features(color_map, features):
     centroid = features[2]
 
     val = [evaluate_feature(f) for f in features]
-    mean = np.mean(np.array(val), axis=0)[0]
+    mean = np.mean(np.array(val), axis=0)
     return [color_map.get_rgb(int(v)) for v in mean]
 
 def feature_extractor(signal, frame_length):
