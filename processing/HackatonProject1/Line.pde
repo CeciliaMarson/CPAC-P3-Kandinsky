@@ -13,7 +13,7 @@ class Line extends Figure {
       
   //Functionalities
   void display(){
-    stroke(this.c);
+    stroke(this.c, random(255));
     strokeWeight(random(5));
     line(this.p1.x,this.p1.y,this.p2.x,this.p2.y); //check if this.stuff or variable_in_class
   

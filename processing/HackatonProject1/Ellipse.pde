@@ -1,3 +1,5 @@
+// WE ARE NOT USING IT RIGHT NOW
+
 class Ellipse extends Figure {
   //Data
   //(none)
