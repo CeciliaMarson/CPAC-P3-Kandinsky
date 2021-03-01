@@ -15,7 +15,7 @@ class ArcFill extends Figure {
   void display(){
     stroke(0);
     strokeWeight(random(5));
-    fill(this.c);
+    fill(this.c, random(255));
     arc(this.p1.x,this.p1.y,this.p2.x,this.p2.y,this.p3.x,this.p3.y, CHORD); //check if this.stuff or variable_in_class
   
   }

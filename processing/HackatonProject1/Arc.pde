@@ -2,6 +2,7 @@ class Arc extends Figure {
   //Data
   //(none)
   
+  
   //Constructor 
   Arc(Pair p1, Pair p2, Pair p3, color c){
     this.p1 = p1; // position
@@ -13,7 +14,7 @@ class Arc extends Figure {
       
   //Functionalities
   void display(){
-    stroke(this.c);
+    stroke(this.c, random(255));
     strokeWeight(random(5));
     noFill();
     arc(this.p1.x,this.p1.y,this.p2.x,this.p2.y,this.p3.x,this.p3.y); //check if this.stuff or variable_in_class
