@@ -319,7 +319,7 @@ def main():
     #the len of signals_features, song_names and instument_list is always the same (the # of songs)
     for f, name, instrument in zip(signals_features, song_names, instrument_list):
         song_dict = create_dict(f[0][:, 0, :], f[1], color_dict[instrument])
-        with open(os.path.join(json_dir, name+'.json'), 'w', encoding='utf-8') as outfile:
+        with open(os.path.join(json_dir, "".join(x for x in name if x.isalnum())+'.json'), 'w', encoding='utf-8') as outfile:
             json.dump(song_dict, outfile, ensure_ascii=False, indent=4)
 
     '''

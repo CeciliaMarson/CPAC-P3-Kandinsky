@@ -88,13 +88,14 @@ def main():
 
     #for now we simply save the previews
     for index, (url, name) in enumerate(zip(preview_urls, songs_name)):
-        filename = os.path.join(artist_dir, name+'.mp3')
+        #remove illegal chars for windows and spaces, then create filename
+        filename = os.path.join(artist_dir, "".join(x for x in name if x.isalnum())+'.mp3')
         print('Dowloading songs from spotify... [{}/{}]'.format(index, len(preview_urls)), end='\r')
         with urlopen(url) as in_stream, open(filename ,'wb') as out_file:
             copyfileobj(in_stream, out_file)   
             sound = AudioSegment.from_mp3(filename)
             sound.export(filename.replace('.mp3', '.wav'), format='wav')
-            os.remove(filename)
+        os.remove(filename)
 
     for id in songs_id:
         song_url = audio_features_url.replace('id', id)
