@@ -1,11 +1,13 @@
 import fetch_audio
 import numpy as np
 import os 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+#disable tf warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
 import librosa
 import json
+from tensorflow.compat.v1.logging import set_verbosity, FATAL
 from tensorflow.keras.models import load_model
-from color_helper import MplColorHelper
+set_verbosity(FATAL)
 
 audio_dir = '../processing/HackatonProject1/data/audio'
 json_dir = '../processing/HackatonProject1/data'
@@ -27,7 +29,10 @@ violet -> horn
 white -> pause
 black -> silence
 '''
-color_dict = {0: (0, 0, 255), 1: (0, 0, 255), 2:(0, 0, 255), 3:(0, 255, 0), 5: (0, 0, 255), 7: (255, 255, 0), 8: (255, 0, 0)}
+
+#used to implement the kandinsky rules
+#each instrument correspond to a color
+color_dict = {0: (0,0,255), 1: (0,0,255), 2:(0,0,255), 3:(0,255,0), 4:(0,0,255), 5: (223,226,30), 6:(0, 255, 0), 7: (255,77,77), 8: (255,153,0), 9:(0,0,255), 10:(255,255,0)}
 
 '''
 #---------------- color mapping ------------------------
@@ -222,7 +227,7 @@ def compute_predictions(audio_path, frame_length, hop_length, model):
   #already loaded as mono
   audio_it = librosa.stream(audio_path, 1, frame_length, hop_length=hop_length, mono=True)
   sr = librosa.get_samplerate(audio_path)
-  print('sr: %s' % (sr)) 
+  #print('sr: %s' % (sr)) 
 
   for block in audio_it:
     block_spec = compute_spec(block, sr)
@@ -243,12 +248,12 @@ def get_instrument(audio_path, frame_length, hop_length, model):
 
     #compute global predictions
     global_predictions = np.argpartition(mean_global,range(mean_global.shape[0]))[-3:][::-1]
-    print('audio path: {}'.format(audio_path))
-    print('global_predictions: {}'.format([(target_dict[el], mean_global[el]) for el in global_predictions]))
+    #print('audio path: {}'.format(audio_path))
+    #print('global_predictions: {}'.format([(target_dict[el], mean_global[el]) for el in global_predictions]))
 
     #compute predictions at each frame
     frame_predictions = np.argmax(predictions, axis=1)
-    print('frame_predictions: {}'.format([target_dict[el] for el in frame_predictions]))
+    #print('frame_predictions: {}'.format([target_dict[el] for el in frame_predictions]))
 
     #return the most probable instrument
     return global_predictions[0]
@@ -291,8 +296,9 @@ def main():
     model = load_model_from_path(model_path)
 
     #load all the audio files
-    for audio in audio_list:
+    for index, audio in enumerate(audio_list):
         audio_path =  os.path.join(audio_dir, audio)
+        print('Classifying instruments in the songs and extracting features... [{}/{}]'.format(index, len(audio_list)), end='\r')
         #instument extraction
         instrument_list.append(get_instrument(audio_path, frame_length, hop_length, model))
         s, sr = librosa.load(os.path.join(audio_dir, audio), sr = None)
