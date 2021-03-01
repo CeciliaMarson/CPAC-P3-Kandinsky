@@ -1,15 +1,9 @@
-import requests 
 import os 
-import urllib.request
-import json
-import numpy as np
+from requests import get, post
 from urllib.request import urlopen
 from shutil import copyfileobj
-import shutil
+from shutil import rmtree
 from pydub import AudioSegment
-
-#token
-#token = "BQBuh_hsoKkUS8VQ476BQsB7Ivzom_0a1UWjkp2IP0P-6gQOBoQ0iNe4o63gvF0LSOBnvqUK4hAxDOOFNwaNSPYFyeI4eq8klXpCpADQNYZgQCH1jFW1tg4Sd9Ey7UbNLcRXDKjL1wRKI-bMy5tZoAWaPnWWGm66-1jKHwW5bbWsD6rxsiU_C_GDdREgEqLxGGYp16Q2uFu6BpevhbEu8bCHLxMPaJhkXVYJR3VZg-CUVvW6jPmsLUbxdifqsO2xQsXgVmO-zjgIlK6gS2A" 
 
 #directories
 audio_dir = '../processing/HackatonProject1/data/audio'
@@ -20,13 +14,18 @@ search_url = 'https://api.spotify.com/v1/search'
 artist_toptrack_url = 'https://api.spotify.com/v1/artists/id/top-tracks'
 audio_features_url = 'https://api.spotify.com/v1/audio-features/id'
 
+#app encoded ids
+encoded_ids = 'NWRjN2Q2OTcyYTIwNDBhZjhhOGRlYTJjYmFiYWUyNzQ6NjQ0Nzc0ZWY4YWZiNDM3MjhkYjRlMzdmYTQ0ZjgwNGQ='
+
 def delete_folder(dir_name):
     #delete previous folder for the preview 
     if os.path.exists(dir_name):
-        shutil.rmtree(dir_name)
+        #shutil.rmtree
+        rmtree(dir_name)
 
 def make_request(url, parameters, header):
-    req = requests.get(url=url, params=parameters, headers=header)
+    #request.get
+    req = get(url=url, params=parameters, headers=header)
     return req
 
 def error_request(req):
@@ -45,8 +44,13 @@ def main():
     os.makedirs(json_dir)
     os.makedirs(audio_dir)
 
-    #ask user for the token
-    token = input('Insert the token: ')
+    #make a post request to get the token
+    #the app is registered on spotify
+    header = {'Authorization': 'Basic {}'.format(encoded_ids)}
+    body = {'grant_type':'client_credentials'}
+    #request.post
+    r = post('https://accounts.spotify.com/api/token', data=body, headers=header)
+    token = r.json()['access_token']
 
     #header field for the request, should contain the token
     header = {'Authorization': 'Bearer %s'%token}
@@ -72,15 +76,15 @@ def main():
     url = artist_toptrack_url.replace('id', artist_id)
     params = {'country': 'IT'}
     req = make_request(url , params, header)
-
     #check for error in the response 
     error_request(req)
 
     songs = req.json()['tracks'] 
     #save url of the preview and song names 
-    preview_urls = [song['preview_url'] for song in songs]
+    preview_urls = [song['preview_url'] for song in songs if song['preview_url'] is not None]
     songs_name = [song['name'] for song in songs]
     songs_id = [song['id'] for song in songs]
+    #print(preview_urls, len(preview_urls) )
 
     #for now we simply save the previews
     for url, name in zip(preview_urls, songs_name):
@@ -96,7 +100,8 @@ def main():
         req = make_request(song_url, None, header)
         #check for error in the response 
         if req.status_code == 503:
-            spotify_features.append({'energy': np.random.random(), 'valence': np.random.random(), 'tempo':120.0})
+            #spotify_features.append({'energy': np.random.random(), 'valence': np.random.random(), 'tempo':120.0})
+            print('Error 503 on url: '.format(song_url))
             continue
         spotify_features.append(req.json())
 

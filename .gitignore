@@ -1,2 +1,2 @@
-audio/*
-__pycache__/*
+pyscript/__pycache__
+**/data
