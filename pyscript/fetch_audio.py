@@ -15,7 +15,6 @@ artist_toptrack_url = 'https://api.spotify.com/v1/artists/id/top-tracks'
 audio_features_url = 'https://api.spotify.com/v1/audio-features/id'
 
 #app encoded ids
-encoded_ids = 'NWRjN2Q2OTcyYTIwNDBhZjhhOGRlYTJjYmFiYWUyNzQ6ODliY2RjZmJiMWJjNDllNGJmZGVmNTQ1ZDdlNGI5MGE='
 
 def delete_folder(dir_name):
     #delete previous folder for the preview 
