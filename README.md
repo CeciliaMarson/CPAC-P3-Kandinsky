@@ -26,7 +26,7 @@ Also we need ffmpeg, in conda simply type
 conda install -c main ffmpeg
 ```
 
-## Virtual env
+### Virtual env
 
 Create the environment.
 
