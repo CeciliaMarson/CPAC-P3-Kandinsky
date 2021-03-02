@@ -32,7 +32,7 @@ black -> silence
 
 #used to implement the kandinsky rules
 #each instrument correspond to a color
-color_dict = {0: (0,0,255), 1: (0,0,255), 2:(0,0,255), 3:(0,255,0), 4:(0,0,255), 5: (223,226,30), 6:(0, 255, 0), 7: (255,77,77), 8: (255,153,0), 9:(0,0,255), 10:(255,255,0)}
+color_dict = {0: (101,101,228), 1: (101,101,228), 2:(101,101,228), 3:(63,288,89), 4:(101,101,228), 5: (223,226,30), 6:(63,288,89), 7: (255,77,77), 8: (255,153,0), 9:(101,101,228), 10:(242,184,48)}
 
 '''
 #---------------- color mapping ------------------------
@@ -80,7 +80,7 @@ def local_features(color_map, features):
 def extract_max_chroma(signal, frame_length, num):
     max_chroma=[]
     max_arg=[]
-    chroma = librosa.feature.chroma_stft(y=signal, hop_length=frame_length, win_length=frame_length)
+    chroma = librosa.feature.chroma_stft(y=signal, hop_length=frame_length, win_length=frame_length, n_fft=frame_length)
 
     for c in chroma.T:
         max_a=np.argmax(c)
@@ -93,7 +93,7 @@ def extract_max_chroma(signal, frame_length, num):
     return np.array(max_chroma)
 
 def detect_pitch(y, frame_length):
-    S=librosa.stft(y=y,hop_length=2048,win_length=2048, center='false')
+    S=librosa.stft(y=y,hop_length=frame_length ,win_length=frame_length, n_fft=frame_length, center='false')
     Xmag=librosa.amplitude_to_db(np.abs(S))
     pitches, magnitudes = librosa.piptrack(S=Xmag, fmin=80, fmax=1000)
     pitch=[]
@@ -115,7 +115,6 @@ def feature_extractor(signal, frame_length, sr):
     zcr = librosa.feature.zero_crossing_rate(signal, frame_length, frame_length)
     #Needed for the first dimesion
     s_centroid = librosa.feature.spectral_centroid(signal, hop_length = frame_length, win_length = frame_length, n_fft=frame_length)
-
     #The higher value note in the chromogram is needed for choosing the shape 
     #The second and the third one complete the chord... the three together choose the color
     chroma_key0, max_c=extract_max_chroma(signal,frame_length,0)
@@ -168,7 +167,7 @@ def create_dict(arr, f_min, background):
     'Y_dim':int(c[2]), #based on brigthness
     'Stroke':int(c[1]*100), #based on "rougthness"
     'X_dim':int(c[7]), #Based on Pitch
-    'Transparency':float(c[8]*10), #based on the energy of the track
+    'Transparency':float(c[8]*100+50), #based on the energy of the track
     'Grid': int((f_min==c[6])&((c[0]>5))) #less frequent note in figure line mode
         } for c in arr.T]
 
@@ -308,13 +307,13 @@ def main():
 
     #1s frame length in sample
     tempos = [f['tempo'] for f in spotify_features]
-    frame_length = sr*np.min(np.array(tempos))
+    frame_length = 22050
 
     #signals_features = [feature_extractor(audio, int(frame_length/tempo), sr) for audio, tempo in zip(audio_files, tempos)]
     #print_features(signals_features)
 
     #extraction of the features for each audio file (2048 as frame length)
-    signals_features = [feature_extractor(audio, 2048, sr) for audio, tempo in zip(audio_files, tempos)]
+    signals_features = [feature_extractor(audio, 11000, sr) for audio, tempo in zip(audio_files, tempos)]
     
     #the len of signals_features, song_names and instument_list is always the same (the # of songs)
     for f, name, instrument in zip(signals_features, song_names, instrument_list):
