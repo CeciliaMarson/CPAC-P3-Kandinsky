@@ -20,20 +20,20 @@ class Grid extends Figure {
   
   //Constructor 
   Grid(Pair p1, Pair p2, Pair p3, color c){
-    this.p1 = p1; // R1, G1 // 3 colors for the square
-    this.p2 = p2; // B1, R2
-    this.p3 = p3; // B2, G2
+    this.p1 = p1; // position of the top left corner 
+    this.p2 = p2; // R1, G1 // 2 colors for the square
+    this.p3 = p3; // x--> B1 | y --> useless
     this.c = c; // color 
     
     c_arr[0] = color(255, 255, 255); 
-    c_arr[1] = color(this.p1.x%255, this.p1.y%255, this.p2.x%255);
-    c_arr[2] = color(this.p2.y%255, this.p3.x%255, this.p3.y%255);
+    c_arr[1] = color(this.p2.x%255, this.p2.y%255, this.p3.x%255);
+    c_arr[2] = color(random(255), random(255), random(255)); // IT CAN BE CHANGED 
     c_arr[3] = this.c;
     
-    coord_v_s[0][0] = x1; coord_v_s[0][1] = y1;
-    coord_v_e[0][0] = x2; coord_v_e[0][1] = y2;  
-    coord_h_s[0][0] = x3; coord_h_s[0][1] = y3;
-    coord_h_e[0][0] = x4; coord_h_e[0][1] = y4;
+    coord_v_s[0][0] = x1 + this.p1.x; coord_v_s[0][1] = y1 + this.p1.y;
+    coord_v_e[0][0] = x2 + this.p1.x; coord_v_e[0][1] = y2 + this.p1.y;  
+    coord_h_s[0][0] = x3 + this.p1.x; coord_h_s[0][1] = y3 + this.p1.y;
+    coord_h_e[0][0] = x4 + this.p1.x; coord_h_e[0][1] = y4 + this.p1.y;
     
     for (int j=1; j<M+1; j++){
       // x coordinates
