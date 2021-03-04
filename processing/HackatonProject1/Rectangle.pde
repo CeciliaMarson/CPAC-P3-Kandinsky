@@ -1,28 +1,29 @@
 class Rectangle extends Figure {
-  /*
-  p1 -> position first point
-  p2 -> w and h
-  p3 -> x --> rotation angle in degrees | y--> useless
-  c -> color stroke
-  opacity -> alpha
-  */
+  //the length of each side
+  float a;
+  float b;
+  //rotation
+  float rotation;
   
   //Constructor 
-  Rectangle(Pair p1, Pair p2, Pair p3, color c, float opacity, int stroke, int fill){
-    super(p1, p2, p3, c, opacity, stroke, fill);
+  Rectangle(Pair p1, float a, float b, color c, float opacity, int stroke, float rotation){
+    super(p1, c, opacity, stroke, 0);
+    this.rotation = rotation;
+    this.fill = true;
+    
+    //shape creation
+    this.shape = createShape();
+    this.shape.beginShape();
+    this.shape.fill(this.c, this.opacity);
+    this.shape.vertex(this.p1.x, this.p1.y);
+    this.shape.vertex(this.p1.x+a, this.p1.y);
+    this.shape.vertex(this.p1.x+a, this.p1.y+b);
+    this.shape.vertex(this.p1.x, this.p1.y+b);
+    this.shape.endShape(CLOSE);
   }
       
   //Functionalities
   void display(){
-    pushMatrix();
-    translate(this.p1.x, this.p1.y);
-    rotate(radians(this.p3.y));
-    stroke(0);
-    strokeWeight(this.strokeWeight);
-    //fill only if the flag is set to 1
-    if (this.fill == 1)
-      fill(this.c, this.opacity);
-    rect(0, 0,this.p2.x,this.p2.y); //check if this.stuff or variable_in_class
-    popMatrix();
+    shape(this.shape);
   }
 }

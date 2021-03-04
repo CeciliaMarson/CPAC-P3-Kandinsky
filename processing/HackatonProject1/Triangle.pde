@@ -11,8 +11,8 @@ class Triangle extends Figure {
   float x3, y3;
   
   //Constructor 
-  Triangle(Pair p1, Pair p2, Pair p3, color c, float opacity, int stroke, int fill){
-    super(p1, p2, p3, c, opacity, stroke, fill);
+  Triangle(Pair p1, Pair p2, Pair p3, color c, float opacity, int stroke){
+    super(p1, p2, p3, c, opacity, stroke);
     
     if ( this.p3.x == 0 ) {
       // equilateral triangle
@@ -62,9 +62,7 @@ class Triangle extends Figure {
   void display(){
     stroke(0);
     strokeWeight(this.strokeWeight);
-    //fill only if the flag is set to 1
-    if (this.fill == 1)
-      fill(this.c, this.opacity);
+    fill(this.c, this.opacity);
     triangle(this.p1.x,this.p1.y,this.p2.x,this.p2.y, x3, y3); //check if this.stuff or variable_in_class
   
   }

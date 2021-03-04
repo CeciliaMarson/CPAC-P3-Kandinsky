@@ -1,28 +1,24 @@
 class Circle extends Figure {
-  /*
-  p1 -> position
-  p2.x -> diameter
-  p2.y -> useless
-  p3 -> useless
-  c -> color 
-  opacity -> alpha
-  */
-   
   //Constructor 
-  Circle(Pair p1, Pair p2, Pair p3, color c, float opacity, int stroke, int fill){
-    super(p1, p2, p3, c, opacity, stroke, fill);
+  Circle(Pair p1, float radius, color c, float opacity, int stroke){
+    super(p1, c, opacity, stroke, 0);
+    this.fill = true;
+    
+    this.shape = createShape();
+    this.shape.beginShape();
+    this.shape.fill(c, this.opacity);
+  
+    for (int i = 0; i < 100; ++i){
+        float angle = ((float) i / 100) * TWO_PI;
+        this.shape.vertex(cos(angle)*radius +this.p1.x, sin(angle)*radius+this.p1.y);
+    }
+    
+    this.shape.endShape();
   }
       
   //Functionalities
   void display(){
-    stroke(0);
-    strokeWeight(this.strokeWeight);
-    //fill only if the flag is set to 1
-    if (this.fill == 1)
-      fill(this.c, this.opacity);
-      
-    circle(this.p1.x,this.p1.y,this.p2.x); //check if this.stuff or variable_in_class
-    
+    shape(this.shape);
   }
   
 }

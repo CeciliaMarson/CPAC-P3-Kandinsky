@@ -60,8 +60,8 @@ def main():
     artist_name = input('Insert the artist name: ')
 
     #create the folder for the artist
-    artist_dir = os.path.join(audio_dir, artist_name)
-    os.makedirs(artist_dir)
+    #artist_dir = os.path.join(audio_dir, artist_name)
+    #os.makedirs(artist_dir)
 
     #get the id of the artist
     params={'q': artist_name , 'type': 'artist'}
@@ -89,23 +89,23 @@ def main():
     #for now we simply save the previews
     for index, (url, name) in enumerate(zip(preview_urls, songs_name)):
         #remove illegal chars for windows and spaces, then create filename
-        filename = os.path.join(artist_dir, "".join(x for x in name if x.isalnum())+'.mp3')
-        print('Dowloading songs from spotify... [{}/{}]'.format(index, len(preview_urls)), end='\r')
+        filename = os.path.join(audio_dir, "".join(x for x in name if x.isalnum())+'.mp3')
+        print('Dowloading songs from spotify... [{}/{}]'.format(index+1, len(preview_urls)), end='\r')
         with urlopen(url) as in_stream, open(filename ,'wb') as out_file:
             copyfileobj(in_stream, out_file)   
             sound = AudioSegment.from_mp3(filename)
             sound.export(filename.replace('.mp3', '.wav'), format='wav')
         os.remove(filename)
 
-    for id in songs_id:
-        song_url = audio_features_url.replace('id', id)
-        req = make_request(song_url, None, header)
+    #for id in songs_id:
+    #    song_url = audio_features_url.replace('id', id)
+     #   req = make_request(song_url, None, header)
         #check for error in the response 
-        if req.status_code == 503:
+     #   if req.status_code == 503:
             #spotify_features.append({'energy': np.random.random(), 'valence': np.random.random(), 'tempo':120.0})
-            print('Error 503 on url: '.format(song_url))
-            continue
-        spotify_features.append(req.json())
+    #        print('Error 503 on url: '.format(song_url))
+     #       continue
+      #  spotify_features.append(req.json())
 
     return artist_name, spotify_features, songs_name
 

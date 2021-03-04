@@ -1,6 +1,7 @@
 import fetch_audio
 import numpy as np
 import os 
+import random
 #disable tf warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
 import librosa
@@ -34,48 +35,117 @@ black -> silence
 #each instrument correspond to a color
 color_dict = {0: (101,101,228), 1: (101,101,228), 2:(101,101,228), 3:(63,288,89), 4:(101,101,228), 5: (223,226,30), 6:(63,288,89), 7: (255,77,77), 8: (255,153,0), 9:(101,101,228), 10:(242,184,48)}
 
-'''
+
 #---------------- color mapping ------------------------
-#select color map based on global features
-def global_color_map(valence, energy):
-    if valence >= 0.2:
-        if energy >= 0.5:
-            map_name = light_maps[np.random.randint(0,2)]
-        else:
-            map_name = light_maps[np.random.randint(2,4)]
-    else:
-        if energy >= 0.5:
-            map_name = dark_maps[np.random.randint(0,2)]
-        else:
-            map_name = dark_maps[np.random.randint(2,4)]
-            
-    return MplColorHelper(map_name, 1, 100)
-
-def evaluate_feature(feature_arr):
-    mean = np.mean(feature_arr)
-    val = np.copy(feature_arr[0])
-    
-    for i, f in enumerate(val):
-        if f >=mean:
-            val[i] = np.random.randint(1,51)
-        else:
-            val[i] = np.random.randint(50, 100)
-
-    val = val.astype(int)
-    return val.tolist() 
-
-#select color for each frame based on local features
-def local_features(color_map, features):
-    zcr = features[0]
-    flat = features[1]
-    centroid = features[2]
-
-    val = [evaluate_feature(f) for f in features]
-    mean = np.mean(np.array(val), axis=0)
-    return [color_map.get_rgb(int(v)) for v in mean]
-'''
 
 #--------------- feature extraction -------------------
+
+def prevalent_color(A,B,C):
+  colors=[]
+  for i,a in enumerate(A):
+    b=B[i]
+    c=C[i]
+    if((a<b) & (a<c)):
+      color=0
+    if(((a>b) & (a<c)) | ((a<b) & (a>c))):
+      color=1
+    if((a>b) & (a>c)):
+      color=2
+    colors.append(color)
+  return np.array(colors)
+
+def RGB_offset(colors, chroma0, max_0, chroma1, max_1, chroma2, max_2):
+  RGB=[]
+  R=[]
+  G=[]
+  B=[]
+  for i,c in enumerate(colors):
+    if(c==0):
+      if(max_1[i]<max_2[i]):
+        r=chroma0.T[i]
+        g=chroma1.T[i]
+        b=chroma2.T[i]
+      else:
+        r=chroma0.T[i]
+        g=chroma2.T[i]
+        b=chroma1.T[i]
+    if(c==1):
+      if(max_1[i]<max_2[i]):
+        r=chroma1.T[i]
+        g=chroma0.T[i]
+        b=chroma2.T[i]
+      else:
+        r=chroma2.T[i]
+        g=chroma0.T[i]
+        b=chroma1.T[i]
+    if(c==2):
+      if(max_1[i]<max_2[i]):
+        r=chroma1.T[i]
+        g=chroma2.T[i]
+        b=chroma0.T[i]
+      else:
+        r=chroma2.T[i]
+        g=chroma1.T[i]
+        b=chroma0.T[i]
+    R.append(r)
+    G.append(g)
+    B.append(b)
+	
+  RGB.append(R)
+  RGB.append(G)
+  RGB.append(B)
+  return np.array(RGB)
+  
+def major_minor(signal, frame_length):
+    max_chroma=[]
+    max_arg=[]
+    chroma = librosa.feature.chroma_stft(y=signal, hop_length=frame_length, win_length=frame_length, n_fft=frame_length)
+    chords=[]
+    for c in chroma.T:
+        mean=np.mean(c)
+        max_a=np.argmax(c)
+        third=(max_a+4)%12
+        fifth=(max_a+7)%12
+        minor=(max_a+3)%12
+        if(third>minor):
+          if((c[third]>=mean) | (c[fifth]>=mean)):
+            key=0
+          else: key=2
+        else:
+          if((c[minor]>=mean) | (c[fifth] >=mean)):
+            key=1
+          else: key=2
+        chords.append(key)
+    return np.array(chords)
+	
+
+def assign_shape(onset, max_ch, chords, color, f_min):
+  shapes=[]
+  for i, j in enumerate(onset.T):
+    if((f_min==max_ch.T[i]) & (j>5)):
+      shape=9  #special condition for grid
+    else:
+      if(j>5): #lines
+        shape=chords[i]
+      else:    #fill figure
+        if(chords[i]==0):
+          if(color[i]==0):
+            shape=3;
+          if(color[i]==1):
+            shape=4
+          if(color[i]==2):
+            shape=5
+        if(chords[i]==1):
+          if(color[i]==0):
+            shape=6;
+          if(color[i]==1):
+            shape=7
+          if(color[i]==2):
+            shape=8
+        if(chords[i]==2): 
+          shape=int(max_ch.T[i]%6)+3
+    shapes.append(shape)   
+  return np.array(shapes)
 
 def extract_max_chroma(signal, frame_length, num):
     max_chroma=[]
@@ -83,14 +153,12 @@ def extract_max_chroma(signal, frame_length, num):
     chroma = librosa.feature.chroma_stft(y=signal, hop_length=frame_length, win_length=frame_length, n_fft=frame_length)
 
     for c in chroma.T:
-        max_a=np.argmax(c)
+        max_a=np.argsort(c)
         c_frame=np.sort(c)
-        max_chroma.append(c_frame[num])
-        max_arg.append(max_a)
-    if(num==0):
-      return np.array(max_chroma),np.array(max_arg)
-  
-    return np.array(max_chroma)
+        max_chroma.append(c_frame[11-num])
+        max_arg.append(max_a[11-num])
+        
+    return np.array(max_chroma),np.array(max_arg)
 
 def detect_pitch(y, frame_length):
     S=librosa.stft(y=y,hop_length=frame_length ,win_length=frame_length, n_fft=frame_length, center='false')
@@ -115,23 +183,33 @@ def feature_extractor(signal, frame_length, sr):
     zcr = librosa.feature.zero_crossing_rate(signal, frame_length, frame_length)
     #Needed for the first dimesion
     s_centroid = librosa.feature.spectral_centroid(signal, hop_length = frame_length, win_length = frame_length, n_fft=frame_length)
+	
     #The higher value note in the chromogram is needed for choosing the shape 
     #The second and the third one complete the chord... the three together choose the color
-    chroma_key0, max_c=extract_max_chroma(signal,frame_length,0)
-    chroma_key1=extract_max_chroma(signal,frame_length,1)
-    chroma_key2=extract_max_chroma(signal,frame_length,2)
+    chroma_key0, max_0 = extract_max_chroma(signal,frame_length,0)
+    chroma_key1, max_1 = extract_max_chroma(signal,frame_length,1)
+    chroma_key2, max_2 = extract_max_chroma(signal,frame_length,2)
 
-    #entropy_s=entropy.spectral_entropy(signal,method='fft',nperseg=frame_length)
-    chroma0=np.expand_dims(chroma_key0, axis=0)
-    chroma1=np.expand_dims(chroma_key1, axis=0)
-    chroma2=np.expand_dims(chroma_key2, axis=0)
-    max_ch=np.expand_dims(max_c, axis=0)
+    chroma0 = np.expand_dims(chroma_key0, axis=0)
+    chroma1 = np.expand_dims(chroma_key1, axis=0)
+    chroma2 = np.expand_dims(chroma_key2, axis=0)
+    max_ch = np.expand_dims(max_0, axis=0)
 
     note=np.zeros((12,1))
     for c in max_ch.T:
       note[c]=note[c]+1
 
     f_min=np.argmin(note)
+	
+	#indicative if the principal chords is major, minor or not clear
+    chords=major_minor(signal, frame_length)
+
+    #assign a primary color based on the position of the higher note in respect to the others
+    colors=prevalent_color(max_0,max_1,max_2)
+
+    #the shape is choosen using infomation from the chroma and from the onset detection 
+    shap=assign_shape(on_set, max_ch, chords, colors, f_min)
+    shapes=np.expand_dims(shap, axis=0)
 
     #pitch is used for second dimension and position 
     pitch=detect_pitch(signal,frame_length)
@@ -139,70 +217,64 @@ def feature_extractor(signal, frame_length, sr):
 
     #energy is used to computet the transparency of the image
     energy=librosa.feature.rms(y=signal, hop_length=frame_length)
+	
+    RGB=RGB_offset(colors, chroma0, max_0, chroma1, max_1, chroma2, max_2)
+    
+    RGB=RGB.reshape(RGB.shape[0],RGB.shape[1])
 
-    features.append(on_set)
+    #features.append(on_set)
+    #features.append(zcr)
+    #features.append(s_centroid)
+    #features.append(chroma0)
+    #features.append(chroma1)
+    #features.append(chroma2)
+    #features.append(max_ch)
+    #features.append(pitch)
+    #features.append(energy)
+    features.append(shapes)
     features.append(zcr)
     features.append(s_centroid)
-    features.append(chroma0)
-    features.append(chroma1)
-    features.append(chroma2)
-    features.append(max_ch)
+    features.append(np.expand_dims(RGB[0], axis=0))
+    features.append(np.expand_dims(RGB[1], axis=0))
+    features.append(np.expand_dims(RGB[2], axis=0))
     features.append(pitch)
     features.append(energy)
 
     #print(np.array(features).shape)
-    return np.array(features), f_min
+    return np.array(features)#, f_min
+	
 
-def create_dict(arr, f_min, background):
-    out = [{#'Background': strumento principale, 
-    'Back_R': background[0],
-    'Back_G': background[1],
-    'Back_B': background[2],
-    'Figure fill': int((c[0]<=5)), #choose if less "rythmic"
-    'Figure line': int((c[0]>5)),  #choose if "rythmic"
-    'Shape': int(c[6]), #based on note
+#Shape indices:
+#Arc=0,Line=1,Wave=2,Square=3,ArcFill=4,Circle=5,Rect=6,Triangle=7,Ellipse=8,Grid=9
+def create_dict(arr):
+    out = [{
+    'Shape': int(c[0]), #based on note
     'R': int(c[3]*255), #based on value of max note (chord)
     'B': int(c[4]*255), #based on value of second max note (chord)
     'G': int(c[5]*255), #based on value of third max note (chord)
-    'Y_dim':int(c[2]), #based on brigthness
+    'Y_dim':int(c[7]*1000), #based on brigthness
     'Stroke':int(c[1]*100), #based on "rougthness"
-    'X_dim':int(c[7]), #Based on Pitch
-    'Transparency':float(c[8]*100+50), #based on the energy of the track
-    'Grid': int((f_min==c[6])&((c[0]>5))) #less frequent note in figure line mode
+    'X_dim':int(c[6]), #Based on Pitch
+    'Transparency':float(c[2]/100+50), #based on the energy of the track
         } for c in arr.T]
-
     return out
 
 '''
-def feature_extractor(signal, frame_length):
-    features = []
+def create_dict(arr, f_min, background):
+    out = [{#'Background': strumento principale, 
+    #'Figure fill': int((c[0]<=5)), #choose if less "rythmic"
+    #'Figure line': int((c[0]>5)),  #choose if "rythmic"
+    'Shape': int(c[0]), #based on note
+    'R': background[0] + random.randint(-int(c[3]*255)*2,int(c[3]*255)*2), #based on value of max note (chord)
+    'B': background[1] + random.randint(-int(c[4]*255)*2,int(c[4]*255)*2), #based on value of second max note (chord)
+    'G': background[2] + random.randint(-int(c[5]*255)*2,int(c[5]*255)*2), #based on value of third max note (chord)
+    'Y_dim':int(c[2]), #based on brigthness
+    'Stroke':int(c[1]*100), #based on "rougthness"
+    'X_dim':int(c[6]), #Based on Pitch
+    'Transparency':float(c[7]*100+50), #based on the energy of the track
+    #'Grid': int((f_min==c[6])&((c[0]>5))) #less frequent note in figure line mode
+        } for c in arr.T]
 
-    zcr = librosa.feature.zero_crossing_rate(signal, frame_length, frame_length)
-    s_flatness = librosa.feature.spectral_flatness(signal, hop_length = frame_length, win_length = frame_length, n_fft=frame_length)
-    s_centroid = librosa.feature.spectral_centroid(signal, hop_length = frame_length, win_length = frame_length, n_fft=frame_length)
-
-    features.append(zcr)
-    features.append(s_flatness)
-    features.append(s_centroid)
-    return features
-
-def print_features(signal_features):
-    for i, f in enumerate(signals_features):
-        print('Mean of zcr: {}'.format(np.mean(f[0])))
-        print('Std of zcr: {}'.format(np.std(f[0])))
-        print('Mean of flat: {}'.format(np.mean(f[1])))
-        print('Std of flat: {}'.format(np.std(f[1])))
-        print('Mean of centr: {}'.format(np.mean(f[2])))
-        print('Std of centr: {}'.format(np.std(f[2])))
-        print('Tempo: {}'.format(spotify_features[i]['tempo']))
-        print('#frames: {}'.format(f[0].shape))
-        print('Energy: {}'.format(spotify_features[i]['energy']))
-        print('Valence: {}'.format(spotify_features[i]['valence']))
-        print('\n')
-        #print('zcr: {}'.format(f[1]))
-
-def create_dict(arr):
-    out = [{'R': int(c[0]*255), 'G': int(c[1]*255), 'B': int(c[2]*255), 'Shape': np.random.randint(0,6)} for c in arr]
     return out
 '''
 #--------------- instrument classification --------------------
@@ -220,22 +292,24 @@ def compute_spec(audio, sr):
     return db_spec
 
 def compute_predictions(audio_path, frame_length, hop_length, model):
-  predictions = []
+  #predictions = []
+  audio = np.empty((1, 128,130,1))
 
   #use stream to create an iterator
   #already loaded as mono
-  audio_it = librosa.stream(audio_path, 1, frame_length, hop_length=hop_length, mono=True)
+  audio_it = librosa.stream(audio_path, 1, frame_length, hop_length=hop_length, mono=True, fill_value=0)
   sr = librosa.get_samplerate(audio_path)
   #print('sr: %s' % (sr)) 
 
   for block in audio_it:
     block_spec = compute_spec(block, sr)
 
-    #add batch dimension and channel dimension
+    #add channel dimension
     block_spec = np.expand_dims(block_spec, axis=-1)
     block_spec = np.expand_dims(block_spec, axis=0)
-    predictions.append(model.predict(block_spec)[0])
-
+    audio = np.vstack((audio, block_spec))
+	
+  predictions = model.predict(audio)
   return predictions
 
 def get_instrument(audio_path, frame_length, hop_length, model):
@@ -271,7 +345,8 @@ def main():
 
     #parameters for instrument classification
     frame_length = 44100*3
-    hop_length = int(frame_length/4) 
+    #hop_length = int(frame_length/4) 
+    hop_length = int(frame_length/4)
 
     #check if all the audio have been downloaded
     if not os.path.exists(audio_dir):
@@ -297,30 +372,35 @@ def main():
     #load all the audio files
     for index, audio in enumerate(audio_list):
         audio_path =  os.path.join(audio_dir, audio)
-        print('Classifying instruments in the songs and extracting features... [{}/{}]'.format(index, len(audio_list)), end='\r')
+        print('Classifying instruments in the songs and extracting features... [{}/{}]'.format(index+1, len(audio_list)), end='\r')
         #instument extraction
         instrument_list.append(get_instrument(audio_path, frame_length, hop_length, model))
         s, sr = librosa.load(os.path.join(audio_dir, audio), sr = None)
         audio_files.append(s)
-
+	
+    
     #------------- feature extraction -------------------
 
     #1s frame length in sample
-    tempos = [f['tempo'] for f in spotify_features]
-    frame_length = 22050
+    #tempos = [f['tempo'] for f in spotify_features]
 
     #signals_features = [feature_extractor(audio, int(frame_length/tempo), sr) for audio, tempo in zip(audio_files, tempos)]
     #print_features(signals_features)
 
     #extraction of the features for each audio file (2048 as frame length)
-    signals_features = [feature_extractor(audio, 11000, sr) for audio, tempo in zip(audio_files, tempos)]
+    signals_features = [feature_extractor(audio, 30000, sr) for audio in audio_files]
     
     #the len of signals_features, song_names and instument_list is always the same (the # of songs)
+    #for f, name, instrument in zip(signals_features, song_names, instrument_list):
+    #    song_dict = create_dict(f[0][:, 0, :], f[1], color_dict[instrument])
+    #    with open(os.path.join(json_dir, "".join(x for x in name if x.isalnum())+'.json'), 'w', encoding='utf-8') as outfile:
+    #        json.dump(song_dict, outfile, ensure_ascii=False, indent=4)
+	
+	#the len of signals_features, song_names and instument_list is always the same (the # of songs)
     for f, name, instrument in zip(signals_features, song_names, instrument_list):
-        song_dict = create_dict(f[0][:, 0, :], f[1], color_dict[instrument])
+        song_dict = create_dict(f[:, 0, :])
         with open(os.path.join(json_dir, "".join(x for x in name if x.isalnum())+'.json'), 'w', encoding='utf-8') as outfile:
             json.dump(song_dict, outfile, ensure_ascii=False, indent=4)
-
     '''
     #for each song choose a colormap based on the global features
     #and then use the local features to select a color for each frame
@@ -336,7 +416,7 @@ def main():
 if __name__ == '__main__':
     #get the artist name from fetch_audio
     artist_name, spotify_features, song_names = fetch_audio.main()
-    audio_dir = os.path.join(audio_dir, artist_name)
+    #audio_dir = os.path.join(audio_dir, artist_name)
     main()
 
 

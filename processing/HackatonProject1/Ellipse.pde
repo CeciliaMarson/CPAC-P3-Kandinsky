@@ -1,29 +1,25 @@
-// WE ARE NOT USING IT RIGHT NOW
-
 class Ellipse extends Figure {
-  /*
-  p1 -> position
-  p2 -> w and h 
-  p3 -> useless
-  c -> color 
-  opacity -> alpha
-  */
-   
-  //Constructor 
-  Ellipse(Pair p1, Pair p2, Pair p3, color c, float opacity, int stroke, int fill){
-      super(p1, p2, p3, c, opacity, stroke, fill);
+  
+    //Constructor 
+    Ellipse(Pair p1, float a, float b, color c, float opacity, int stroke){
+    super(p1, c, opacity, stroke, 0);
+    this.fill = true;
+    
+    this.shape = createShape();
+    this.shape.beginShape();
+    this.shape.fill(this.c, this.opacity);
+    
+    for (int i = 0; i < 100; ++i) { 
+      float angle = ((float) i / 100) * TWO_PI;
+      this.shape.vertex(cos(angle)*a +this.p1.x, sin(angle)*b+this.p1.y);
+    }
+      
+    this.shape.endShape();
   }
       
   //Functionalities
   void display(){
-    stroke(0);
-    strokeWeight(this.strokeWeight);
-    //fill only if the flag is set to 1
-    if (this.fill == 1)
-      fill(this.c, this.opacity);
-      
-    ellipse(this.p1.x,this.p1.y,this.p2.x,this.p2.y); //check if this.stuff or variable_in_class
-    
+    shape(this.shape);
   }
   
 }

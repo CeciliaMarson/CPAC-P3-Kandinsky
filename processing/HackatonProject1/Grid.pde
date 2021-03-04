@@ -19,13 +19,10 @@ class Grid extends Figure {
   color[] c_arr = new color[4];
   
   //Constructor 
-  Grid(Pair p1, Pair p2, Pair p3, color c){
-    this.p1 = p1; // position of the top left corner 
-    this.p2 = p2; // R1, G1 // 2 colors for the square
-    this.p3 = p3; // x--> B1 | y --> useless
-    this.c = c; // color 
+  Grid(Pair p1, Pair p2, Pair p3, color c, float opacity){
+    super(p1, p2, p3, c, opacity, 0);
     
-    c_arr[0] = color(255, 255, 255); 
+    c_arr[0] = color(random(255), random(255), random(255)); 
     c_arr[1] = color(this.p2.x%255, this.p2.y%255, this.p3.x%255);
     c_arr[2] = color(random(255), random(255), random(255)); // IT CAN BE CHANGED 
     c_arr[3] = this.c;
@@ -67,7 +64,7 @@ class Grid extends Figure {
       
           stroke(0);
           strokeWeight(2);
-          fill(c_arr[(i+1)*(j+1)%4]);
+          fill(c_arr[(i+1)*(j+1)%4], this.opacity);
           quad(hit0.x, hit0.y, hit1.x, hit1.y, hit2.x, hit2.y, hit3.x, hit3.y);
       }
     }
